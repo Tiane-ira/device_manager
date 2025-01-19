@@ -1,0 +1,30 @@
+version: '3.9'
+
+services:
+  backend:
+    image: device-reservation-backend:v0.0.1
+    ports:
+      - 8080:8080
+    volumes:
+      - devicema:/app/data
+
+  frontend:
+    image: device-reservation-frontend:v0.0.1
+    ports:
+      - 8088:8088
+    volumes:
+      - devicema_frontend:/var/log/nginx
+    depends_on:
+      - backend
+    links:
+      - backend
+
+networks:
+  default:
+
+
+volumes:
+  devicema:
+  devicema_frontend:
+
+

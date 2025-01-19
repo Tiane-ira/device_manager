@@ -1,0 +1,1 @@
+docker build -t device-reservation-backend:v0.0.1 .

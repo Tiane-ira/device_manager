@@ -1,0 +1,17 @@
+*.tar.gz
+*.zip
+*.rar
+*.7z
+*.iso
+*.img
+*.bin
+*.exe
+
+.vscode
+.idea
+.DS_Store
+.vscode-test
+*/node_modules
+*/dist
+
+*/device-reservation-*
