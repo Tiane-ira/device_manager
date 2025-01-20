@@ -23,7 +23,7 @@ echo "前端构建完成"
 echo "开始打包"
 cd $workdir/output
 pkg_name=${image_name}-${version}
-rm -rf $pkg_name
+rm -rf $pkg_name*
 mkdir -p $pkg_name
 docker save -o $pkg_name/server.tar.gz $backend_image $frontend_image
 cp -f docker-compose.yaml $pkg_name
