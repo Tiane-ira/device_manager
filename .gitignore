@@ -6,6 +6,7 @@
 *.img
 *.bin
 *.exe
+*.db
 
 .vscode
 .idea

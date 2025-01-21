@@ -33,6 +33,10 @@
                         </el-tooltip>
                     </div>
                     <div class="date-selector">
+                        <el-button-group class="date-shortcuts">
+                            <el-button @click="setToday">今天</el-button>
+                            <el-button @click="addOneDay">+1天</el-button>
+                        </el-button-group>
                         <el-date-picker v-model="selectedDateRange" type="daterange" range-separator="至"
                             start-placeholder="开始日期" end-placeholder="结束日期" format="YYYY-MM-DD"
                             value-format="YYYY-MM-DD" :disabled-date="disabledDate" @change="handleDateRangeChange" />
@@ -133,6 +137,21 @@ const handleDateRangeChange = () => {
     selectedSlots.value = []
     reservationForm.deviceId = ''
     fetchReservationsForDateRange()
+}
+
+// 设置日期范围为今天
+const setToday = () => {
+    const today = dayjs().format('YYYY-MM-DD')
+    selectedDateRange.value = [today, today]
+    handleDateRangeChange()
+}
+
+// 将结束日期增加一天
+const addOneDay = () => {
+    const [startDate, endDate] = selectedDateRange.value
+    const newEndDate = dayjs(endDate).add(1, 'day').format('YYYY-MM-DD')
+    selectedDateRange.value = [startDate, newEndDate]
+    handleDateRangeChange()
 }
 
 // 获取设备列表
@@ -420,6 +439,14 @@ onMounted(async () => {
 
 .date-selector {
     margin-left: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.date-shortcuts {
+    display: flex;
+    gap: 8px;
 }
 
 .selected-date {
