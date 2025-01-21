@@ -3,7 +3,7 @@
         <el-card>
             <template #header>
                 <div class="card-header">
-                    <div>
+                    <div class="header-left">
                         <span class="title">设备预约&nbsp;&nbsp;&nbsp;&nbsp;</span>
                         <el-select v-model="searchForm.deviceId" placeholder="请选择设备" clearable style="width: 220px;">
                             <el-option v-for="device in deviceList" :key="device.ID" :label="device.name"
@@ -16,6 +16,21 @@
                                 </div>
                             </el-option>
                         </el-select>
+                        <el-tooltip
+                            content="请先选择设备预约时段"
+                            :disabled="selectedSlots.length > 0"
+                            placement="top"
+                        >
+                            <el-button
+                                type="primary"
+                                @click="handleSubmitReservation"
+                                :loading="submitting"
+                                :disabled="selectedSlots.length === 0"
+                            >
+                                <el-icon><Check /></el-icon>
+                                确认预约
+                            </el-button>
+                        </el-tooltip>
                     </div>
                     <div class="date-selector">
                         <el-date-picker v-model="selectedDateRange" type="daterange" range-separator="至"
@@ -26,69 +41,52 @@
             </template>
 
             <div class="device-section">
+
                 <div class="section-title">
                     设备列表
                     <span class="selected-date">{{ selectedDate }} 预约情况</span>
                 </div>
-                <el-row :gutter="24">
-                    <el-col v-for="device in availableDevices" :key="device.ID" :span="12" :xs="24" :sm="24" :md="12"
-                        class="mb-4">
-                        <el-card :class="['device-card', { 'selected': reservationForm.deviceId === device.ID }]"
-                            shadow="hover">
-                            <div class="device-header">
-                                <div class="device-info">
-                                    <div class="device-name">
-                                        <el-icon>
-                                            <Monitor />
-                                        </el-icon>
-                                        {{ device.name }}
-                                    </div>
-                                    <div class="device-ip">IP: {{ device.ip }}</div>
-                                    <div class="device-description">{{ device.description || '暂无描述' }}</div>
-                                </div>
-                            </div>
-
-                            <el-divider>
-                                <el-tag size="small" type="success">可预约时间段</el-tag>
-                                <el-button link @click="selectAllSlots(device)">全选</el-button>
-                            </el-divider>
-
-                            <div class="time-slots-grid">
-                                <div v-for="slot in allTimeSlots" :key="slot.ID" :class="['time-slot-item', {
-                                    'reserved': isSlotReserved(device.ID, slot.ID),
-                                    'selected': isSlotSelected(device.ID, slot.ID)
-                                }]" @click="toggleSlotSelection(device, slot)">
-                                    <div class="time-slot-content">
-                                        <div class="time-slot-name">{{ slot.name }}</div>
-                                        <div class="time-slot-time">
-                                            <el-icon>
-                                                <Timer />
-                                            </el-icon>
-                                            {{ slot.startTime }} - {{ slot.endTime }}
+                <div class="device-list-container">
+                    <el-row :gutter="24">
+                        <el-col v-for="device in availableDevices" :key="device.ID" :span="6"
+                            class="mb-4">
+                            <el-card :class="['device-card', { 'selected': reservationForm.deviceId === device.ID }]"
+                                shadow="hover">
+                                <div class="device-header">
+                                    <div class="device-info">
+                                        <div class="device-name">
+                                            <div>
+                                                <el-icon>
+                                                    <Monitor />
+                                                </el-icon>
+                                                {{ device.name }}
+                                            </div>
+                                            <div class="device-ip">IP: {{ device.ip }}</div>
+                                            <div class="device-description">{{ device.description || '暂无描述' }}</div>
                                         </div>
                                     </div>
-                                    <div class="time-slot-status">
-                                        <el-tag size="small"
-                                            :type="isSlotReserved(device.ID, slot.ID) ? 'danger' : 'success'">
-                                            {{ isSlotReserved(device.ID, slot.ID) ? '已预约' : '可预约' }}
-                                        </el-tag>
+                                </div>
+                                <div class="time-slots-grid">
+                                    <div v-for="slot in allTimeSlots" :key="slot.ID" :class="['time-slot-item', {
+                                        'reserved': isSlotReserved(device.ID, slot.ID),
+                                        'selected': isSlotSelected(device.ID, slot.ID)
+                                    }]" @click="toggleSlotSelection(device, slot)">
+                                        <div class="time-slot-content">
+                                            <div class="time-slot-name">{{ slot.name }}</div>
+                                            <div class="time-slot-info">
+                                                <div class="time-slot-time">
+                                                    <el-icon>
+                                                        <Timer />
+                                                    </el-icon>
+                                                    {{ slot.startTime }} - {{ slot.endTime }}
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </el-card>
-                    </el-col>
-                </el-row>
-
-                <div class="submit-section" v-if="selectedDevice && selectedSlots.length > 0">
-                    <el-alert
-                        :title="`已选择：${selectedDevice.name} - ${selectedSlots.map(slotId => getTimeSlotById(slotId)?.name).join(', ')} - ${selectedDate}`"
-                        type="success" :closable="false" class="mb-4" />
-                    <el-button type="primary" @click="handleSubmitReservation" size="large" :loading="submitting">
-                        <el-icon>
-                            <Check />
-                        </el-icon>
-                        确认预约
-                    </el-button>
+                            </el-card>
+                        </el-col>
+                    </el-row>
                 </div>
             </div>
         </el-card>
@@ -205,14 +203,6 @@ const toggleSlotSelection = (device, slot) => {
     reservationForm.deviceId = device.ID
 }
 
-// 全选时间段
-const selectAllSlots = (device) => {
-    selectedDevice.value = device
-    selectedSlots.value = allTimeSlots.value
-        .filter(slot => !isSlotReserved(device.ID, slot.ID))
-        .map(slot => slot.ID)
-    reservationForm.deviceId = device.ID
-}
 
 const submitting = ref(false)
 
@@ -273,62 +263,76 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.device-card {
-    height: 100%;
-    transition: all 0.3s;
-    border-radius: 8px;
-    overflow: hidden;
+.device-list-container {
+    height: calc(100vh - 280px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 8px;
 }
 
-.device-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+.device-list-container::-webkit-scrollbar {
+    width: 6px;
 }
 
-.device-header {
-    padding: 12px 0;
+.device-list-container::-webkit-scrollbar-thumb {
+    background-color: var(--el-border-color-darker);
+    border-radius: 3px;
+}
+
+.device-list-container::-webkit-scrollbar-track {
     background-color: var(--el-fill-color-light);
 }
 
+.device-card {
+    height: auto;
+    transition: all 0.3s;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+.device-header {
+    padding: 4px 0;
+}
+
 .device-name {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: bold;
     color: var(--el-color-primary);
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
+    gap: 6px;
+    margin-bottom: 4px;
 }
 
 .device-ip {
     color: var(--el-text-color-secondary);
-    font-size: 14px;
-    margin-bottom: 8px;
+    font-size: 13px;
+    line-height: 1.2;
+    margin-bottom: 2px;
 }
 
 .device-description {
     color: var(--el-text-color-regular);
-    font-size: 14px;
-    line-height: 1.5;
+    font-size: 13px;
+    line-height: 1.2;
 }
 
 .time-slots-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 12px;
-    padding: 12px 0;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 8px 0;
 }
 
 .time-slot-item {
-    border: 1px solid var(--el-border-color-light);
+    border: 1px solid var(--el-color-success);
     border-radius: 6px;
-    padding: 12px;
+    padding: 6px;
     cursor: pointer;
     transition: all 0.3s;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: 8px;
+    position: relative;
+    min-height: 60px;
 }
 
 .time-slot-item:hover:not(.reserved) {
@@ -337,6 +341,7 @@ onMounted(async () => {
 }
 
 .time-slot-item.reserved {
+    border-color: var(--el-color-danger);
     background-color: var(--el-fill-color-light);
     opacity: 0.8;
     cursor: not-allowed;
@@ -348,13 +353,19 @@ onMounted(async () => {
 }
 
 .time-slot-content {
-    flex: 1;
+    width: 100%;
 }
 
 .time-slot-name {
     font-weight: bold;
     margin-bottom: 8px;
     color: var(--el-text-color-primary);
+}
+
+.time-slot-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .time-slot-time {
@@ -366,7 +377,7 @@ onMounted(async () => {
 }
 
 .time-slot-status {
-    text-align: right;
+    margin-left: 8px;
 }
 
 .section-title {
@@ -381,9 +392,12 @@ onMounted(async () => {
 .submit-section {
     margin-top: 24px;
     text-align: center;
+    padding: 16px;
+    background-color: var(--el-fill-color-light);
+    border-radius: 8px;
 }
 
-.mb-4 {
+.submit-section .el-alert {
     margin-bottom: 16px;
 }
 
@@ -396,6 +410,12 @@ onMounted(async () => {
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
 }
 
 .date-selector {
