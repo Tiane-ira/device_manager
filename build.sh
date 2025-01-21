@@ -1,7 +1,12 @@
 # !/bin/bash
 
+if [ "$1" == "" ];then
+    echo "请输入版本号"
+    exit 1
+fi
+
 image_name=device-reservation
-version=v0.0.1
+version=$1
 
 backend_image=${image_name}-backend:${version}
 frontend_image=${image_name}-frontend:${version}
